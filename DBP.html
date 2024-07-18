@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DBP最終レポート</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        width: 80%;
+        margin: auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h1,
+      h2,
+      h3 {
+        color: #333;
+      }
+      p {
+        line-height: 1.6;
+        color: #666;
+      }
+      .code-block {
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin: 20px 0;
+        overflow-x: auto;
+      }
+      .code-block code {
+        display: block;
+        white-space: pre-wrap;
+      }
+      video {
+        width: 80%; /* ビデオの幅を80%に設定 */
+        height: auto; /* 高さを自動調整 */
+        margin: 20px 0;
+        display: block; /* ブロック要素として表示 */
+        margin-left: auto; /* 左右中央揃え */
+        margin-right: auto;
+      }
+      .image-container {
+        text-align: center;
+        margin: 20px 0;
+      }
+      .image-container img {
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+        margin-bottom: 10px;
+      }
+      .image-caption {
+        color: #666;
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>DBP最終レポート</h1>
+
+      <h2>22FI041 岸　幸之介</h2>
+      <h2>概要</h2>
+      <p>使用言語：HTML、CSS、Javascript、Java（JSP）、Postgres</p>
+      <h3>
+        説明：海外サッカーの有名なプレミアリーグという強いクラブチームが集まるリーグがあります。その選手（計550名程度）です。これらの選手情報をもとに様々な工夫をしたアプリを作成しました。
+      </h3>
+
+      <h2>主な機能</h2>
+      <ul>
+        <li>選手の追加機能、削除機能、選手一覧</li>
+        <li>選手検索機能（絞り込み）</li>
+        <li>
+          オリジナルチーム制作→自身の好きな選手を20人まで選べる（ベンチメンバー含め）
+        </li>
+      </ul>
+      <h2>設計方針</h2>
+      <li>
+        主にJSPを使用し、Tomcat10_Java17で起動しブラウザで表示させました。
+      </li>
+      <li>
+        今回は、サッカー選手のCSVを配布している
+        https://footystats.org/jp/download-stats-csv
+        →このサイトのCSVを取得し、PythonでCSVをPostgresに挿入
+      </li>
+      <div class="image-container">
+        <p class="image-caption">PythonでCSVの挿入</p>
+        <img src="Python.png" alt="Sample Image 5" />
+      </div>
+
+      <h2>工夫点➀</h2>
+      <h2>データベースを2つ作成した</h2>
+      <p>１：プレミアリーグの選手一覧</p>
+      <p>２：オリジナルチーム用</p>
+
+      <div class="image-container">
+        <p class="image-caption">データベース</p>
+        <img src="de.png" alt="Sample Image 7" />
+      </div>
+      <h2>工夫点➁</h2>
+
+      <p>プルダウン機能の追加</p>
+      <ul>
+        <li>
+          Class.forName(driverClassName);でJDBCドライバーをロードし、DriverManager.getConnection(url,
+          user, password);でPostgreSQLデータベースに接続。
+        </li>
+        <li>
+          connection.createStatement();でステートメントオブジェクトを作成し、statement.executeQuery(query);でSQLクエリを実行して結果セットを取得。
+        </li>
+        <li>
+          クエリ結果セットからクラブチーム名を取得し、optionタグとしてプルダウンメニューに追加します。この部分が動的に選択肢を生成するためのポイントです！
+        </li>
+        <li>
+          while
+          (resultSet.next())ループ内で、各クラブチーム名を取り出し、HTMLのoptionタグとして出力します。
+        </li>
+      </ul>
+      <div class="code-block">
+        <code>
+          &lt;label for="search_club"&gt;クラブチーム名:&lt;/label&gt;<br />
+          &lt;select id="search_club" name="search_club"&gt;<br />
+          &lt;option value=""&gt;-- クラブチームを選択 --&lt;/option&gt;<br />
+          &lt;%<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;String driverClassName =
+          "org.postgresql.Driver";<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;String url =
+          "jdbc:postgresql://localhost/soccer";<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;String user = "postgres";<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;String password = "○○";<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;Connection connection = null;<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;Statement statement = null;<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;ResultSet resultSet = null;<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;try {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Class.forName(driverClassName);<br />ここ！！！
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;connection =
+          DriverManager.getConnection(url, user, password);<br />ここ！！
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;statement =
+          connection.createStatement();<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;String query = "SELECT
+          DISTINCT current_club FROM players ORDER BY current_club";<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;resultSet =
+          statement.executeQuery(query);<br />
+          ここ！！ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while
+          (resultSet.next()) {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;String
+          club = resultSet.getString("current_club");<br />
+          %&gt;<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&lt;option value="&lt;%= club %&gt;"&gt;&lt;%=
+          club %&gt;&lt;/option&gt;<br />
+          &lt;%<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;} catch (Exception e) {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.printStackTrace();<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;} finally {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;try {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if
+          (resultSet != null) resultSet.close();<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if
+          (statement != null) statement.close();<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if
+          (connection != null) connection.close();<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} catch (Exception e)
+          {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.printStackTrace();<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;}<br />
+          %&gt;<br />
+          &lt;/select&gt;<br />
+        </code>
+      </div>
+
+      <p></p>
+      <div class="code-block">
+        <code> ここに工夫したコードを書く </code>
+      </div>
+
+      <h2>工夫点➂</h2>
+      <h2>Javascriptで動的に（動画です）</h2>
+      <video controls>
+        <source src="soccer.mp4" type="video/mp4" />
+        お使いのブラウザは動画タグをサポートしていません。
+      </video>
+      <h2>
+        絞り込みの際のクラブチームや国籍にプルダウン機能の実装（データベースから）
+      </h2>
+      <p>ここでも選手の絞り込みができます</p>
+      <video controls>
+        <source src="soccer1.mp4" type="video/mp4" />
+        お使いのブラウザは動画タグをサポートしていません。
+      </video>
+
+      <div class="image-container">
+        <p class="image-caption">選択した選手を削除機能</p>
+        <img src="2.png" alt="Sample Image 2" />
+      </div>
+      <div class="image-container">
+        <p class="image-caption">選手一覧</p>
+        <img src="3.png" alt="Sample Image 3" />
+      </div>
+      <div class="image-container">
+        <p class="image-caption">オリジナルチームの選手検索機能</p>
+        <img src="4.png" alt="Sample Image 4" />
+      </div>
+      <div class="image-container">
+        <p class="image-caption">オリジナルチームの選手追加</p>
+        <img src="5.png" alt="Sample Image 5" />
+      </div>
+      <div class="image-container">
+        <p class="image-caption">オリジナルチーム一覧</p>
+        <img src="7.png" alt="Sample Image 7" />
+      </div>
+    </div>
+  </body>
+</html>
